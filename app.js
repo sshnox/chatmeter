@@ -92,12 +92,14 @@ function wire(){
  $('#footerSettingsButton').addEventListener('click',()=>setDrawer(true));
  $('#closeSettingsButton').addEventListener('click',()=>setDrawer(false));
  $('#drawerScrim').addEventListener('click',()=>setDrawer(false));
- $('#openUsageButton').addEventListener('click',()=>chrome?.tabs?.create?chrome.tabs.create({url:'https://chatgpt.com/'}):window.open('https://chatgpt.com/','_blank','noopener'));
+ $('#openUsageButton').addEventListener('click',()=>{if(typeof chrome!=='undefined'&&chrome.tabs?.create)chrome.tabs.create({url:'https://chatgpt.com/'});else window.open('https://chatgpt.com/','_blank','noopener');});
  $('#saveSnapshotButton').addEventListener('click',async()=>{
    const input=$('#remainingInput'),value=Number(input.value);
    if(input.value.trim()===''||!Number.isInteger(value)||value<0||value>100){window.alert('Enter the whole-number percentage shown in ChatGPT (0–100).');input.focus();return;}
    const resetText=$('#officialResetInput').value;
-   const resetAt=resetText?new Date(resetText).toISOString():null;
+   const parsed=resetText?Date.parse(resetText):null;
+   if(resetText&&!Number.isFinite(parsed)){window.alert('Enter a valid reset date.');return;}
+   const resetAt=resetText?new Date(parsed).toISOString():null;
    if(await act('CHATMETER_UPDATE',{official:{remaining:value,label:$('#categoryInput').value,resetAt}}))setDrawer(false);
  });
  $('#clearSnapshotButton').addEventListener('click',async()=>{if(await act('CHATMETER_UPDATE',{official:null}))setDrawer(false);});
