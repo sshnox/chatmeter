@@ -60,10 +60,18 @@
 
   function detect() {
     if (location.href !== currentUrl) {
+      // The first send on the new-chat page commonly changes / to /c/{id}.
+      // Preserve only that pending send; ordinary conversation navigation
+      // clears pending gestures and baselines historical messages.
+      const previousPath = new URL(currentUrl).pathname;
+      const nextPath = new URL(location.href).pathname;
+      const firstConversation = previousPath === '/' && nextPath.startsWith('/c/') && pending.length > 0;
       currentUrl = location.href;
-      pending.length = 0;
-      baseline(); // Route hydration is not a new submitted prompt.
-      return;
+      if (!firstConversation) {
+        pending.length = 0;
+        baseline();
+        return;
+      }
     }
     const now = Date.now();
     while (pending.length && pending[0] <= now) pending.shift();
@@ -87,7 +95,7 @@
         event.metaKey || event.altKey) return;
     const target = event.target;
     if (target instanceof HTMLElement &&
-        (target.matches('textarea, #prompt-textarea') || target.isContentEditable)) arm('keyboard');
+        (target.matches('textarea, #prompt-textarea') || Boolean(target.closest?.('[contenteditable="true"][data-testid*="composer"]')))) arm('keyboard');
   }, true);
 
   document.addEventListener('click', event => {
