@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111318" />
+    <title>ChatMeter — ChatGPT usage tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand-lockup" aria-label="ChatMeter">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="wordmark">CHAT<span>METER</span></span>
+        </div>
+        <div class="topbar-actions">
+          <span class="live-chip"><span class="live-dot"></span> LOCAL ONLY</span>
+          <button class="icon-button" id="settingsButton" type="button" aria-label="Open settings" title="Settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/><path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9 1.8 1.8 0 0 1-3.5 0 1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 1 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3 1.8 1.8 0 0 1 0-3.5 1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 1 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9 1.8 1.8 0 0 1 3.5 0 1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 1 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3 1.8 1.8 0 0 1 0 3.5 1.8 1.8 0 0 0-.9 3Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="eyebrow-row">
+          <p class="eyebrow">CHATGPT USAGE / TODAY</p>
+          <p class="updated-label">Updated <span id="updatedAt">just now</span></p>
+        </div>
+
+        <section class="hero-card" aria-labelledby="usageHeading">
+          <div class="hero-copy">
+            <div class="hero-kicker"><span class="pulse-line"></span> CURRENT CYCLE</div>
+            <h1 id="usageHeading"><strong id="usedValue">39</strong><span> messages</span></h1>
+            <p class="hero-subline">of <strong id="limitValue">80</strong> used <span class="separator">/</span> <strong id="remainingValue">41</strong> left</p>
+            <div class="progress-track" aria-label="Usage progress">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-meta"><span>Limit health</span><strong id="percentValue">49%</strong></div>
+          </div>
+          <div class="usage-ring" id="usageRing" aria-label="49 percent of message limit used">
+            <div class="ring-center"><strong id="ringValue">49%</strong><span>used</span></div>
+          </div>
+        </section>
+
+        <section class="context-strip" aria-label="Current ChatGPT context">
+          <div class="context-cell">
+            <span class="context-label">PLAN</span>
+            <span class="context-value"><span class="plan-glyph">✦</span><span id="planValue">Plus</span></span>
+          </div>
+          <div class="context-cell">
+            <span class="context-label">ACTIVE MODEL</span>
+            <span class="context-value model-value"><span class="model-glyph">◎</span><span id="modelValue">GPT-4.1 mini</span></span>
+          </div>
+          <div class="context-cell reset-cell">
+            <span class="context-label">RESETS IN</span>
+            <span class="context-value"><span id="resetCountdown">2h 14m</span></span>
+            <span class="reset-date" id="resetDate">Today, 18:30</span>
+          </div>
+        </section>
+
+        <section class="activity-card">
+          <div class="section-header">
+            <div class="segmented" role="tablist" aria-label="Dashboard views">
+              <button class="segment is-active" type="button" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+              <button class="segment" type="button" role="tab" aria-selected="false" data-tab="activity">Activity <span class="count-badge" id="activityCount">8</span></button>
+            </div>
+            <button class="text-button" id="logUsageButton" type="button"><span>+</span> log prompt</button>
+          </div>
+
+          <div class="tab-panel is-visible" id="overviewPanel" role="tabpanel">
+            <div class="section-title-row">
+              <div>
+                <p class="section-kicker">SIGNAL CHECK</p>
+                <h2>Steady pace, plenty of room.</h2>
+              </div>
+              <span class="status-badge" id="statusBadge">NORMAL</span>
+            </div>
+            <div class="bars" aria-label="Messages by day">
+              <div class="bar-row"><span>Mon</span><div class="day-track"><i style="width: 32%"></i></div><strong>13</strong></div>
+              <div class="bar-row"><span>Tue</span><div class="day-track"><i style="width: 53%"></i></div><strong>21</strong></div>
+              <div class="bar-row"><span>Wed</span><div class="day-track"><i style="width: 73%"></i></div><strong>29</strong></div>
+              <div class="bar-row today"><span>Today</span><div class="day-track"><i id="todayBar" style="width: 49%"></i></div><strong id="todayCount">39</strong></div>
+            </div>
+            <div class="insight-row"><span class="insight-icon">↗</span><span>You are <strong>18% under</strong> your 7-day average.</span><span class="insight-note">good signal</span></div>
+          </div>
+
+          <div class="tab-panel" id="activityPanel" role="tabpanel" aria-hidden="true">
+            <div class="section-title-row activity-title-row">
+              <div>
+                <p class="section-kicker">RECENT EVENTS</p>
+                <h2>Every prompt, in one place.</h2>
+              </div>
+              <span class="activity-total" id="activityTotal">8 events</span>
+            </div>
+            <div class="activity-list" id="activityList"></div>
+          </div>
+        </section>
+
+        <section class="privacy-card" id="privacyCard">
+          <span class="privacy-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3 5.5 5.5v5.7c0 4.1 2.7 7.7 6.5 9.3 3.8-1.6 6.5-5.2 6.5-9.3V5.5L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <div><strong>Your data stays here.</strong><p>ChatMeter stores usage events in this browser. Nothing is sent to a server.</p></div>
+          <span class="privacy-arrow">↗</span>
+        </section>
+
+        <footer class="footer-row">
+          <span>v0.1.0 <i></i> local storage</span>
+          <button type="button" class="footer-link" id="footerSettingsButton">tracker settings <span>↗</span></button>
+        </footer>
+      </main>
+    </div>
+
+    <div class="drawer-scrim" id="drawerScrim" hidden></div>
+    <aside class="settings-drawer" id="settingsDrawer" aria-label="Tracker settings" aria-hidden="true">
+      <div class="drawer-header"><div><p class="section-kicker">CONTROL ROOM</p><h2>Tracker settings</h2></div><button class="icon-button close-button" id="closeSettingsButton" type="button" aria-label="Close settings">×</button></div>
+      <p class="drawer-intro">Tune the meter to match the limit you see in ChatGPT. Your preferences stay local too.</p>
+      <label class="setting-field"><span>Cycle message limit</span><span class="input-wrap"><input id="limitInput" type="number" min="1" max="9999" step="1" value="80" /><small>messages</small></span></label>
+      <div class="setting-row"><div><strong>Show privacy reminder</strong><p>Keep the local-only note visible on the dashboard.</p></div><label class="switch"><input id="privacyToggle" type="checkbox" checked /><span></span></label></div>
+      <div class="setting-row muted-setting"><div><strong>Automatic refresh</strong><p>Reads the current page session when available.</p></div><span class="coming-soon">READY</span></div>
+      <div class="drawer-footer"><button class="danger-button" id="resetDataButton" type="button">Reset local data</button><p>Usage history is removed from this browser only.</p></div>
+    </aside>
+
+    <script src="app.js"></script>
+  </body>
+</html>
