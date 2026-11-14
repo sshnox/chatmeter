@@ -8,6 +8,14 @@ ChatMeter is a small Chrome/Edge extension I built to keep ChatGPT usage visible
 
 Maintained by [sshnox](https://github.com/sshnox).
 
+## v0.3 — account-sourced snapshots
+
+ChatMeter does **not** automatically read your official ChatGPT allowance. No supported personal usage API is used. The main meter remains empty until you explicitly enter a percentage from ChatGPT Settings → Usage. Enter a category so different usage pools are not confused, and optionally copy the reset time. Each snapshot is marked as manually supplied with a capture timestamp; it is not a live sync.
+
+If ChatGPT doesn't show a remaining percentage, leave the field empty rather than guessing. Local observed prompts are shown in a separate section, are best-effort only, and are never subtracted from your official snapshot. The app stores data locally, doesn't collect prompt text, and doesn't intercept private endpoints or authentication tokens.
+
+Use **Record snapshot** to open the entry form, **Open ChatGPT** to navigate to the Usage page through ChatGPT settings, **Clear saved snapshot** to erase the manual allowance without deleting history, or **Reset local data** to clear everything. The update retains v0.2 activity records. The README sections below describe older versions; this section describes current usage.
+
 ## v0.2 accuracy notes
 
 ChatMeter observes newly rendered ChatGPT user messages following a send action. The heuristic may miss or miscount prompts if ChatGPT changes its DOM, when a send is edited, or when usage occurs on another device. No official usage or account quota API is used.
