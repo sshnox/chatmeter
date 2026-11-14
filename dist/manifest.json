@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ChatMeter — ChatGPT usage tracker",
-  "version": "0.2.0",
-  "description": "Local estimate of observed ChatGPT prompts, not official quota tracking.",
+  "version": "0.3.0",
+  "description": "Privacy-first ChatGPT usage snapshots and separate browser-observed activity.",
   "action": {
     "default_title": "Open ChatMeter",
     "default_popup": "index.html"
