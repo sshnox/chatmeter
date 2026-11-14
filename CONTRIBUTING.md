@@ -1,23 +1,30 @@
 # Contributing to ChatMeter
 
-Thanks for helping improve ChatMeter. The project is deliberately small and dependency-free, so the easiest way to contribute is to keep changes focused and easy to audit.
+Thanks for taking a look at ChatMeter. Please keep pull requests small and explain what changed, why it helps, and how you tested it.
 
 ## Before opening a pull request
 
-Please describe the user problem, the behavior you changed, and how you checked it. Run `npm run check` and `npm run build`, then include a screenshot when a UI change affects the popup layout.
+Run the checks below and rebuild the extension if you changed source files:
 
-## Privacy contract
+```bash
+npm run check
+npm run build
+```
 
-ChatMeter must remain local-first. New code should not collect prompt text, add analytics, introduce an account system, or send usage data to a remote service. New browser permissions need a clear explanation in the README and should be kept as narrow as possible.
+For popup changes, include a screenshot or a short note describing what you checked in the preview.
 
-## Development flow
+## Privacy rules
 
-1. Fork the repository and create a focused branch.
-2. Make the smallest change that solves the issue.
-3. Run the syntax check and rebuild `dist/`.
-4. Test the popup in local preview and, when relevant, as an unpacked extension.
-5. Open a pull request with a concise summary and verification notes.
+ChatMeter is a local-first extension. Please do not add prompt-text collection, analytics, an account system, or a remote usage service. Keep new permissions narrow and explain them in the README.
 
-## Reporting security issues
+## Suggested workflow
 
-Please avoid posting sensitive security details in a public issue. Open a private GitHub security advisory when available, or contact the maintainer through the repository owner profile.
+1. Fork the repository and create a branch.
+2. Make the change.
+3. Run `npm run check` and `npm run build`.
+4. Test the preview and, when relevant, load `dist/` as an unpacked extension.
+5. Open a pull request with a short summary and verification notes.
+
+## Security
+
+Please do not post sensitive security details in a public issue. Use a private GitHub security advisory when available, or contact the maintainer through the repository owner profile.

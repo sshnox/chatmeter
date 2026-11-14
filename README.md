@@ -2,28 +2,23 @@
 
 > A local-first ChatGPT usage tracker for Chromium browsers.
 
-ChatMeter is a small Manifest V3 browser extension that gives you a clear, private view of your ChatGPT usage. It shows the current message count, configured limit, plan and model context, reset timing, recent activity, and a compact health signal without sending usage data to a server.
+ChatMeter is a small Chrome/Edge extension I built to keep ChatGPT usage visible while I work. The popup shows the current message count, configured limit, plan and model, reset timing, recent activity, and a simple usage status.
 
 ![ChatMeter dashboard preview](docs/preview.png)
 
-## Why ChatMeter?
+Maintained by [sshnox](https://github.com/sshnox).
 
-ChatGPT usage limits can be difficult to keep in view while you work. ChatMeter turns that state into a focused popup: one glance tells you how much of the current cycle you have used, how much remains, and when the cycle is expected to reset.
+## What it does
 
-The project is intentionally local-first. The extension uses `chrome.storage.local`, requests only the `storage` permission, and runs its content script only on ChatGPT pages. There is no account system, analytics endpoint, remote database, or API key.
-
-## Features
-
-- Current-cycle message count with remaining messages and percentage used
-- Plan and active-model context in the popup
-- Normal, watch, and danger threshold states as usage increases
-- Reset countdown and next reset date/time
-- Recent prompt/session activity feed with relative timestamps
-- Overview and Activity tabs in a compact popup layout
-- Settings for the cycle limit, privacy reminder, and local-data reset
-- Chromium Manifest V3 packaging with a background service worker
-- Local preview fallback using `localStorage` when the extension API is unavailable
-- ChatGPT composer detection for prompt events on `chatgpt.com` and `chat.openai.com`
+- Shows messages used, messages remaining, and percentage used
+- Displays the selected plan and active model
+- Changes the meter between normal, watch, and danger states
+- Shows a reset countdown and next reset time
+- Keeps a small activity list of recent prompts and sessions
+- Includes Overview and Activity tabs
+- Lets you change the cycle limit and clear local history
+- Runs as a Manifest V3 extension in Chromium browsers
+- Includes a local preview so you can try the popup without installing it
 
 ## Install from source
 
@@ -33,73 +28,69 @@ ChatMeter is currently distributed as an unpacked developer build.
 2. Run `npm run build`.
 3. Open `chrome://extensions` in Chrome, Edge, Brave, Arc, or another Chromium browser.
 4. Turn on **Developer mode**.
-5. Choose **Load unpacked** and select the generated `dist/` directory.
-6. Pin ChatMeter from the extensions menu, then open ChatGPT and the ChatMeter popup.
+5. Choose **Load unpacked** and select the `dist/` directory.
+6. Pin ChatMeter, open ChatGPT, and then open the ChatMeter popup.
 
-The generated `dist/` directory is checked in so reviewers can inspect the exact loadable bundle. Rebuild it after changing source files.
+The `dist/` directory is included for convenience. Run the build command again after changing the source files.
 
 ## Local preview
 
-The popup can be previewed without installing the extension:
+You can preview the popup without installing the extension:
 
 ```bash
 npm run start
 ```
 
-Then open `http://localhost:3000`. The preview uses browser `localStorage` as a fallback because `chrome.storage.local` is only available inside the extension runtime. Use **+ log prompt** to exercise the activity feed and meter.
+Open `http://localhost:3000`. The preview uses `localStorage` because `chrome.storage.local` is only available inside an installed extension. Use **+ log prompt** to try the activity feed and usage meter.
 
 ## Development commands
 
 ```bash
-npm run start   # Run the local preview on port 3000
+npm run start   # Run the preview on port 3000
 npm run check   # Check JavaScript syntax
-npm run build   # Emit the loadable dist/ extension bundle
+npm run build   # Build the unpacked extension into dist/
 ```
 
-The project intentionally has no runtime dependencies. The UI is built with semantic HTML, plain CSS, and browser JavaScript so the extension remains small and easy to audit.
+There are no runtime dependencies. The popup uses plain HTML, CSS, and browser JavaScript.
 
 ## How it works
 
-The popup reads a single `chatmeter_state_v1` snapshot from `chrome.storage.local`. The background service worker creates the initial snapshot and receives `CHATMETER_PROMPT` messages from the content script. The content script watches for Enter submissions in the ChatGPT composer and clicks on send buttons, then records only a local event count and timestamp. It does not read or transmit prompt text.
+The popup and background service worker share one `chatmeter_state_v1` record in `chrome.storage.local`. The content script watches the ChatGPT composer for a submission and sends a small event message to the service worker. The event contains a timestamp and a count, not the text of the prompt.
 
-The popup also listens for storage changes, so the dashboard can update when a prompt is recorded while ChatGPT is open in another tab. In a normal browser preview, the same state model is persisted to `localStorage`.
+When the extension is not installed, the preview uses the same state shape in `localStorage`. The popup listens for storage changes so it can update when a prompt is recorded in another tab.
 
 ## Privacy and permissions
 
-ChatMeter is designed to be auditable:
+ChatMeter stores usage data in the browser and does not have a backend, login, analytics, or API key.
 
-- **Storage permission:** used only to retain the usage snapshot and settings locally.
+- **Storage:** saves the usage count, activity list, limit, and settings locally.
 - **ChatGPT host access:** limited to `https://chatgpt.com/*` and `https://chat.openai.com/*` so prompt submissions can be counted.
-- **No prompt text collection:** the content script sends an event signal, not the text you typed.
-- **No network service:** the extension has no backend, telemetry endpoint, login, or API key.
-- **Reset anytime:** the settings drawer removes the locally stored usage history from the current browser.
+- **No prompt text:** the content script sends an event signal only.
+- **No network service:** usage data is not sent anywhere.
+- **Clear anytime:** use **Reset local data** in settings to remove the local history.
 
-The limit and reset values are user-configured approximations. They are not an official OpenAI quota API and should not be treated as billing or availability guarantees.
+The limit and reset values are configurable estimates. They are not an official OpenAI quota API or a billing meter.
 
 ## Project layout
 
 ```text
 .
 ├── index.html          # Popup UI and settings drawer
-├── styles.css          # Original dark graphite/citron visual system
-├── app.js              # Popup state, rendering, tabs, and local persistence
-├── background.js       # MV3 service worker for local prompt events
+├── styles.css          # Popup styles
+├── app.js              # Popup state and interactions
+├── background.js       # MV3 service worker
 ├── content.js          # ChatGPT composer event detection
-├── manifest.json       # Browser extension metadata and permissions
-├── build.mjs           # Copies the loadable bundle into dist/
-├── server.mjs          # Dependency-free local preview server
-├── dist/               # Generated unpacked extension bundle
-└── docs/preview.png    # Dashboard screenshot used in this README
+├── manifest.json       # Extension metadata and permissions
+├── build.mjs           # Builds the dist/ folder
+├── server.mjs          # Local preview server
+├── dist/               # Loadable unpacked extension
+└── docs/preview.png    # README screenshot
 ```
 
 ## Contributing
 
-Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before making a change. Keep the extension local-first, avoid adding permissions without a clear need, and do not introduce prompt-content collection.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) before making a change. Please keep the extension local-first, avoid adding permissions without a clear reason, and do not add prompt-content collection.
 
 ## License
 
 ChatMeter is released under the [MIT License](LICENSE).
-
-## Acknowledgements
-
-The feature direction was informed by reviewing public open-source usage tracker patterns, including [GPT Stats](https://github.com/fchavonet/chrome_extension-gpt_stats), [AI Usage Extension](https://github.com/cupcakedev/ai-usage-extension), and [ChatGPT Token Counter](https://github.com/Dhruvg0/Chatgpt-token-counter). ChatMeter does not copy their source code, branding, or exact visual design.
