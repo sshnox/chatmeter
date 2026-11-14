@@ -24,38 +24,38 @@
 
       <main class="content">
         <div class="eyebrow-row">
-          <p class="eyebrow">CHATGPT USAGE / LOCAL ESTIMATE</p>
+          <p class="eyebrow">CHATGPT ALLOWANCE / ACCOUNT SNAPSHOT</p>
           <p class="updated-label">Updated <span id="updatedAt">just now</span></p>
         </div>
 
         <section class="hero-card" aria-labelledby="usageHeading">
           <div class="hero-copy">
-            <div class="hero-kicker"><span class="pulse-line"></span> CURRENT LOCAL WINDOW</div>
-            <h1 id="usageHeading"><strong id="usedValue">0</strong><span> messages</span></h1>
-            <p class="hero-subline">of <strong id="limitValue">80</strong> used <span class="separator">/</span> <strong id="remainingValue">80</strong> left</p>
+            <div class="hero-kicker"><span class="pulse-line"></span> USER-VERIFIED SNAPSHOT</div>
+            <h1 id="usageHeading"><strong id="usedValue">—</strong><span> remaining</span></h1>
+            <p class="hero-subline"><strong id="snapshotCaption">No official information recorded</strong><span class="separator">/</span><span id="snapshotAge">Not synced</span></p>
             <div class="progress-track" aria-label="Usage progress">
               <div class="progress-fill" id="progressFill"></div>
             </div>
-            <div class="progress-meta"><span>Limit health</span><strong id="percentValue">0%</strong></div>
+            <div class="progress-meta"><span>Allowance used (snapshot)</span><strong id="percentValue">—</strong></div>
           </div>
           <div class="usage-ring" id="usageRing" aria-label="49 percent of message limit used">
-            <div class="ring-center"><strong id="ringValue">0%</strong><span>used</span></div>
+            <div class="ring-center"><strong id="ringValue">—</strong><span>used</span></div>
           </div>
         </section>
 
         <section class="context-strip" aria-label="Current ChatGPT context">
           <div class="context-cell">
             <span class="context-label">PLAN</span>
-            <span class="context-value"><span class="plan-glyph">✦</span><span id="planValue">Not configured</span></span>
+            <span class="context-value"><span class="plan-glyph">✦</span><span id="planValue">Not verified</span></span>
           </div>
           <div class="context-cell">
-            <span class="context-label">ACTIVE MODEL</span>
-            <span class="context-value model-value"><span class="model-glyph">◎</span><span id="modelValue">Not detected</span></span>
+            <span class="context-label">ALLOWANCE CATEGORY</span>
+            <span class="context-value model-value"><span class="model-glyph">◎</span><span id="modelValue">Not recorded</span></span>
           </div>
           <div class="context-cell reset-cell">
-            <span class="context-label">EST. WINDOW ENDS IN</span>
-            <span class="context-value"><span id="resetCountdown">Not started</span></span>
-            <span class="reset-date" id="resetDate">Starts with first prompt</span>
+            <span class="context-label">REPORTED RESET</span>
+            <span class="context-value"><span id="resetCountdown">Not provided</span></span>
+            <span class="reset-date" id="resetDate">No verified reset</span>
           </div>
         </section>
 
@@ -65,19 +65,19 @@
               <button class="segment is-active" type="button" role="tab" aria-selected="true" data-tab="overview">Overview</button>
               <button class="segment" type="button" role="tab" aria-selected="false" data-tab="activity">Activity <span class="count-badge" id="activityCount">0</span></button>
             </div>
-            <button class="text-button" id="logUsageButton" type="button"><span>+</span> log prompt</button>
+            <button class="text-button" id="logUsageButton" type="button"><span>+</span> record snapshot</button>
           </div>
 
           <div class="tab-panel is-visible" id="overviewPanel" role="tabpanel">
             <div class="section-title-row">
               <div>
-                <p class="section-kicker">SIGNAL CHECK</p>
-                <h2>Local usage estimate.</h2>
+                <p class="section-kicker">LOCAL ACTIVITY · NOT QUOTA</p>
+                <h2>Browser-observed activity.</h2>
               </div>
-              <span class="status-badge" id="statusBadge">NORMAL</span>
+              <span class="status-badge" id="statusBadge">ESTIMATE</span>
             </div>
             <div class="bars" id="dailyBars" aria-label="Observed messages by day"></div>
-            <div class="insight-row"><span class="insight-icon">↗</span><span><span id="insightText">Tracking begins with your first observed prompt.</span></span><span class="insight-note">good signal</span></div>
+            <div class="insight-row"><span class="insight-icon">↗</span><span><span id="insightText">Tracking begins with your first observed prompt.</span></span><span class="insight-note">local only</span></div>
           </div>
 
           <div class="tab-panel" id="activityPanel" role="tabpanel" aria-hidden="true">
@@ -101,7 +101,7 @@
         </section>
 
         <footer class="footer-row">
-          <span>v0.2.0 <i></i> local storage</span>
+          <span>v0.3.0 <i></i> local storage</span>
           <button type="button" class="footer-link" id="footerSettingsButton">tracker settings <span>↗</span></button>
         </footer>
       </main>
@@ -110,10 +110,15 @@
     <div class="drawer-scrim" id="drawerScrim" hidden></div>
     <aside class="settings-drawer" id="settingsDrawer" aria-label="Tracker settings" aria-hidden="true">
       <div class="drawer-header"><div><p class="section-kicker">CONTROL ROOM</p><h2>Tracker settings</h2></div><button class="icon-button close-button" id="closeSettingsButton" type="button" aria-label="Close settings">×</button></div>
-      <p class="drawer-intro">These are local tracking estimates, not official OpenAI quotas or reset times.</p>
-      <label class="setting-field"><span>Cycle message limit</span><span class="input-wrap"><input id="limitInput" type="number" min="1" max="9999" step="1" value="80" /><small>messages</small></span></label>
-      <label class="setting-field"><span>Estimated window (hours)</span><span class="input-wrap"><input id="cycleHoursInput" type="number" min="1" max="168" step="1" value="3" /><small>hours</small></span></label><div class="setting-row"><div><strong>Show privacy reminder</strong><p>Keep the local-only note visible on the dashboard.</p></div><label class="switch"><input id="privacyToggle" type="checkbox" checked /><span></span></label></div>
-      <div class="setting-row muted-setting"><div><strong>Automatic refresh</strong><p>Observes rendered user messages after a send action; this is not an official API.</p></div><span class="coming-soon">READY</span></div>
+      <p class="drawer-intro">Copy the remaining allowance from ChatGPT Settings → Usage. This is a manually recorded snapshot, not a live connection.</p>
+      <label class="setting-field"><span>Allowance category</span><span class="input-wrap"><input id="categoryInput" type="text" maxlength="64" placeholder="e.g. Work &amp; Codex" /></span></label>
+      <label class="setting-field"><span>Remaining allowance shown by ChatGPT</span><span class="input-wrap"><input id="remainingInput" type="number" min="0" max="100" step="1" placeholder="0–100" /><small>%</small></span></label>
+      <label class="setting-field"><span>Reset date/time shown (optional)</span><span class="input-wrap"><input id="officialResetInput" type="datetime-local" /></span></label>
+      <button class="text-button" id="openUsageButton" type="button">Open ChatGPT for Settings → Usage ↗</button>
+      <button class="text-button" id="saveSnapshotButton" type="button">Save account snapshot</button>
+      <button class="text-button" id="clearSnapshotButton" type="button">Clear saved snapshot</button>
+      <div class="setting-row"><div><strong>Show privacy reminder</strong><p>Keep the local-only note visible on the dashboard.</p></div><label class="switch"><input id="privacyToggle" type="checkbox" checked /><span></span></label></div>
+      <div class="setting-row muted-setting"><div><strong>Local activity</strong><p>Best-effort browser observations only. Never deducted from official allowance.</p></div><span class="coming-soon">LOCAL</span></div>
       <div class="drawer-footer"><button class="danger-button" id="resetDataButton" type="button">Reset local data</button><p>Usage history is removed from this browser only.</p></div>
     </aside>
 
