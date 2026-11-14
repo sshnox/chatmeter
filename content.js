@@ -52,7 +52,7 @@
     pending.splice(0, pending.length, ...pending.filter(t => t > now));
     // Prevent a duplicate Enter + click gesture for the same submission,
     // without suppressing separate real messages received seconds or milliseconds apart.
-    if (type !== lastArmType && now - lastArmAt < GESTURE_COALESCE_MS) return;
+    if (pending.length > 0 && type !== lastArmType && now - lastArmAt < GESTURE_COALESCE_MS) return;
     lastArmType = type;
     lastArmAt = now;
     pending.push(now + ARM_LIFETIME_MS);
