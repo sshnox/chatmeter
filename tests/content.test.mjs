@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { URL } from 'node:url';
 const source = readFileSync(new URL('../content.js', import.meta.url), 'utf8');
 
 function environment(initial = []) {
@@ -36,7 +37,7 @@ function environment(initial = []) {
   }
   class Clock extends Date { static now() { return now; } }
   vm.runInNewContext(source, { document, MutationObserver, Date: Clock, HTMLElement: Element, Element,
-    location: pageLocation, chrome: { runtime: { sendMessage: async message => { recorded.push(message); } } } });
+    location: pageLocation, URL, chrome: { runtime: { sendMessage: async message => { recorded.push(message); } } } });
   return {
     recorded, messages, node, composer, location: pageLocation,
     advance(ms) { now += ms; },
