@@ -2,7 +2,7 @@
 
 > A local-first ChatGPT usage tracker for Chromium browsers.
 
-ChatMeter is a small Chrome/Edge extension I built to keep ChatGPT usage visible while I work. The popup shows the current message count, configured limit, plan and model, reset timing, recent activity, and a simple usage status.
+ChatMeter is a small Chrome/Edge extension I built to keep ChatGPT usage visible while I work. The popup shows a manually recorded account-usage snapshot, its age, any supplied reset time, and a separate best-effort local activity history.
 
 ![ChatMeter dashboard preview](docs/preview.png)
 
@@ -31,13 +31,13 @@ ChatMeter observes newly rendered ChatGPT user messages following a send action.
 
 ## What it does
 
-- Shows messages used, messages remaining, and percentage used
-- Displays the selected plan and active model
-- Changes the meter between normal, watch, and danger states
-- Shows a reset countdown and next reset time
+- Shows a manually recorded percentage remaining when ChatGPT displays one
+- Labels the allowance category; does not infer the active account plan or model
+- Keeps the main meter empty unless a user-sourced percentage is supplied
+- Shows reset timing only if manually supplied by the user
 - Keeps a small activity list of recent prompts and sessions
 - Includes Overview and Activity tabs
-- Lets you change the cycle limit and clear local history
+- Lets you record or clear a snapshot and reset local history
 - Runs as a Manifest V3 extension in Chromium browsers
 - Includes a local preview so you can try the popup without installing it
 
@@ -62,7 +62,7 @@ You can preview the popup without installing the extension:
 npm run start
 ```
 
-Open `http://localhost:3000`. The preview uses `localStorage` because `chrome.storage.local` is only available inside an installed extension. Use **+ log prompt** to try the activity feed and usage meter.
+Open `http://localhost:3000`. The preview uses `localStorage` because `chrome.storage.local` is only available inside an installed extension. Use **Record snapshot** to enter a percentage copied from ChatGPT Settings → Usage.
 
 ## Development commands
 
@@ -91,7 +91,7 @@ ChatMeter stores usage data in the browser and does not have a backend, login, a
 - **No network service:** usage data is not sent anywhere.
 - **Clear anytime:** use **Reset local data** in settings to remove the local history.
 
-The limit and local time-window values are configurable estimates. They are not an official OpenAI quota API or billing meter.
+No official live usage API is connected; values on the main meter are user-entered snapshots, not synchronized balances.
 
 ## Project layout
 
