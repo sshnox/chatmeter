@@ -23,21 +23,24 @@ function renderActivity(){
  }
 }
 function render(){
- state=core.advance(state,new Date().toISOString());
- const ratio=state.used/state.limit,percent=Math.round(ratio*100),visual=clamp(percent,0,100),s=status(ratio);
- $('#usedValue').textContent=state.used;$('#limitValue').textContent=state.limit;
- $('#remainingValue').textContent=Math.max(0,state.limit-state.used);
- $('#percentValue').textContent=percent+'%';$('#ringValue').textContent=percent+'%';
- $('#planValue').textContent=state.plan;$('#modelValue').textContent=state.model;
- $('#resetCountdown').textContent=countdown(state.resetAt);
- $('#resetDate').textContent=resetDate(state.resetAt);
- $('#updatedAt').textContent=relative(state.updatedAt);
- const fill=$('#progressFill');fill.style.width=visual+'%';fill.style.background=s.color;
- fill.style.boxShadow='0 0 15px color-mix(in srgb, '+s.color+' 35%, transparent)';
- const ring=$('#usageRing');ring.style.setProperty('--ring',visual*3.6+'deg');ring.style.setProperty('--ring-color',s.color);
- ring.setAttribute('aria-label',percent+' percent of configured estimate');
- const badge=$('#statusBadge');badge.textContent=s.label;badge.className='status-badge '+s.css;
- $('#limitInput').value=state.limit;$('#cycleHoursInput').value=state.cycleHours;
+
+ const snapshot=state.official;
+ const used=snapshot?100-snapshot.remaining:0,visual=clamp(used,0,100);
+ $('#usedValue').textContent=snapshot?snapshot.remaining+'%':'—';
+ $('#snapshotCaption').textContent=snapshot?snapshot.source:'No official information recorded';
+ $('#snapshotAge').textContent=snapshot?'Copied '+relative(snapshot.capturedAt):'Not synced';
+ $('#percentValue').textContent=snapshot?used+'%':'—';
+ $('#ringValue').textContent=snapshot?used+'%':'—';
+ $('#planValue').textContent=snapshot?'User-entered':'Not verified';
+ $('#modelValue').textContent=snapshot?snapshot.label:'Not recorded';
+ $('#resetCountdown').textContent=snapshot&&snapshot.resetAt?countdown(snapshot.resetAt):'Not provided';
+ $('#resetDate').textContent=snapshot&&snapshot.resetAt?resetDate(snapshot.resetAt):'No verified reset';
+ $('#updatedAt').textContent=snapshot?relative(snapshot.capturedAt):'not yet';
+ const fill=$('#progressFill');fill.style.width=(snapshot?visual:0)+'%';fill.style.background='var(--lime)';
+ fill.style.boxShadow='0 0 15px color-mix(in srgb, var(--lime) 35%, transparent)';
+ const ring=$('#usageRing');ring.style.setProperty('--ring',(snapshot?visual:0)*3.6+'deg');ring.style.setProperty('--ring-color','var(--lime)');
+ ring.setAttribute('aria-label',snapshot?used+' percent used as manually copied from ChatGPT':'No official usage snapshot available');
+ const badge=$('#statusBadge');badge.textContent='LOCAL ONLY';badge.className='status-badge';
  $('#privacyToggle').checked=state.prefs.showPrivacy;$('#privacyCard').hidden=!state.prefs.showPrivacy;
  const rows=core.days(state),container=$('#dailyBars');container.replaceChildren();
  const max=Math.max(1,...rows.map(item=>item.count));
@@ -50,7 +53,7 @@ function render(){
   row.append(name,track,value);container.append(row);
  }
  const past=rows.slice(0,6).reduce((sum,item)=>sum+item.count,0);
- $('#insightText').textContent=past?'Previous 6-day average: '+(past/6).toFixed(1)+' observed prompts/day.':'Tracking begins with your first observed prompt.';
+ $('#insightText').textContent=past?'Previous 6-day average: '+(past/6).toFixed(1)+' browser-observed prompts/day (not allowance).':'No browser-observed prompts recorded yet. This does not indicate your account usage.';
  renderActivity();
 }
 async function send(type,patch){
@@ -80,17 +83,26 @@ function setDrawer(open){
  if(open)focusBefore=document.activeElement;
  const drawer=$('#settingsDrawer');drawer.classList.toggle('is-open',open);drawer.setAttribute('aria-hidden',String(!open));
  $('#drawerScrim').hidden=!open;
- if(open)$('#limitInput').focus();else focusBefore?.focus();
+ if(open){const o=state.official;$('#categoryInput').value=o?.label||'';$('#remainingInput').value=o?String(o.remaining):'';$('#officialResetInput').value=o?.resetAt?new Date(o.resetAt).toLocaleDateString('sv-SE')+'T'+new Date(o.resetAt).toTimeString().slice(0,5):'';$('#remainingInput').focus();}else focusBefore?.focus();
 }
 function wire(){
  $$('.segment').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
- $('#logUsageButton').addEventListener('click',()=>act('CHATMETER_PROMPT'));
+ $('#logUsageButton').addEventListener('click',()=>setDrawer(true));
  $('#settingsButton').addEventListener('click',()=>setDrawer(true));
  $('#footerSettingsButton').addEventListener('click',()=>setDrawer(true));
  $('#closeSettingsButton').addEventListener('click',()=>setDrawer(false));
  $('#drawerScrim').addEventListener('click',()=>setDrawer(false));
- $('#limitInput').addEventListener('change',()=>act('CHATMETER_UPDATE',{limit:Number($('#limitInput').value)}));
- $('#cycleHoursInput').addEventListener('change',()=>act('CHATMETER_UPDATE',{cycleHours:Number($('#cycleHoursInput').value)}));
+ $('#openUsageButton').addEventListener('click',()=>{if(typeof chrome!=='undefined'&&chrome.tabs?.create)chrome.tabs.create({url:'https://chatgpt.com/'});else window.open('https://chatgpt.com/','_blank','noopener');});
+ $('#saveSnapshotButton').addEventListener('click',async()=>{
+   const input=$('#remainingInput'),value=Number(input.value);
+   if(input.value.trim()===''||!Number.isInteger(value)||value<0||value>100){window.alert('Enter the whole-number percentage shown in ChatGPT (0–100).');input.focus();return;}
+   const resetText=$('#officialResetInput').value;
+   const parsed=resetText?Date.parse(resetText):null;
+   if(resetText&&!Number.isFinite(parsed)){window.alert('Enter a valid reset date.');return;}
+   const resetAt=resetText?new Date(parsed).toISOString():null;
+   if(await act('CHATMETER_UPDATE',{official:{remaining:value,label:$('#categoryInput').value,resetAt}}))setDrawer(false);
+ });
+ $('#clearSnapshotButton').addEventListener('click',async()=>{if(await act('CHATMETER_UPDATE',{official:null}))setDrawer(false);});
  $('#privacyToggle').addEventListener('change',()=>act('CHATMETER_UPDATE',{showPrivacy:$('#privacyToggle').checked}));
  $('#resetDataButton').addEventListener('click',async()=>{if(window.confirm('Reset all locally tracked ChatMeter data?')&&await act('CHATMETER_RESET'))setDrawer(false);});
  document.addEventListener('keydown',event=>{
