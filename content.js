@@ -13,8 +13,7 @@
   let added=false;
   document.querySelectorAll(selector).forEach(node=>{
    if(seen.has(node))return;
-   seen.add(node);
-   if((node.innerText||node.textContent||'').trim())added=true;
+   if((node.innerText||node.textContent||'').trim()){seen.add(node);added=true;}
   });
   if(!added||Date.now()>armedUntil||Date.now()-lastCount<1000)return;
   armedUntil=0;lastCount=Date.now();
