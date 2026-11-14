@@ -1,232 +1,111 @@
-const STORAGE_KEY = 'chatmeter_state_v1';
-const hasChromeStorage = typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
-
-const initialEvents = [
-  { id: 'e8', title: 'Prompt counted', detail: 'GPT-4.1 mini · 1 message', at: new Date(Date.now() - 8 * 60 * 1000).toISOString() },
-  { id: 'e7', title: 'Prompt counted', detail: 'GPT-4.1 mini · 1 message', at: new Date(Date.now() - 34 * 60 * 1000).toISOString() },
-  { id: 'e6', title: 'Prompt counted', detail: 'GPT-4.1 mini · 1 message', at: new Date(Date.now() - 75 * 60 * 1000).toISOString() },
-  { id: 'e5', title: 'New session', detail: 'GPT-4.1 mini · 8 messages', at: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString() },
-  { id: 'e4', title: 'Prompt counted', detail: 'GPT-4.1 mini · 1 message', at: new Date(Date.now() - 5.2 * 60 * 60 * 1000).toISOString() },
-  { id: 'e3', title: 'New session', detail: 'GPT-4.1 mini · 5 messages', at: new Date(Date.now() - 7.8 * 60 * 60 * 1000).toISOString() },
-  { id: 'e2', title: 'Prompt counted', detail: 'GPT-4.1 mini · 1 message', at: new Date(Date.now() - 21 * 60 * 60 * 1000).toISOString() },
-  { id: 'e1', title: 'New session', detail: 'GPT-4.1 mini · 4 messages', at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() }
-];
-
-function createInitialState() {
-  return {
-    plan: 'Plus',
-    model: 'GPT-4.1 mini',
-    used: 39,
-    limit: 80,
-    resetAt: new Date(Date.now() + 2 * 60 * 60 * 1000 + 14 * 60 * 1000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    events: initialEvents,
-    prefs: { showPrivacy: true }
-  };
+const core=globalThis.ChatMeterCore,KEY=core.KEY;
+const hasStorage=typeof chrome!=='undefined'&&Boolean(chrome.storage?.local&&chrome.runtime?.sendMessage);
+let state=core.initialState();
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+function relative(iso){if(!iso)return 'not yet';const min=Math.max(0,Math.round((Date.now()-Date.parse(iso))/60000));return min<1?'just now':min<60?min+'m ago':min<1440?Math.floor(min/60)+'h ago':Math.floor(min/1440)+'d ago';}
+function countdown(iso){if(!iso)return 'Not started';const ms=Date.parse(iso)-Date.now();return ms<=0?'Window ended':Math.floor(ms/3600000)+'h '+String(Math.floor(ms%3600000/60000)).padStart(2,'0')+'m';}
+function resetDate(iso){return iso?new Date(iso).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Starts with first prompt';}
+function status(r){return r>=.85?{label:'WATCH LIMIT',css:'danger',color:'var(--red)'}:r>=.65?{label:'WATCH',css:'warning',color:'var(--orange)'}:{label:'NORMAL',css:'',color:'var(--lime)'};}
+function renderActivity(){
+ const list=$('#activityList');list.replaceChildren();
+ $('#activityCount').textContent=state.events.length;
+ $('#activityTotal').textContent=state.events.length+' recent events';
+ if(!state.events.length){const item=document.createElement('p');item.textContent='No prompts tracked yet.';list.append(item);return;}
+ for(const event of state.events.slice(0,30)){
+  const row=document.createElement('div');row.className='activity-item';
+  const icon=document.createElement('span');icon.className='activity-icon';icon.textContent='↗';
+  const copy=document.createElement('div');copy.className='activity-copy';
+  const title=document.createElement('strong');title.textContent=event.title;
+  const detail=document.createElement('span');detail.textContent=event.detail;copy.append(title,detail);
+  const at=document.createElement('span');at.className='activity-time';at.textContent=relative(event.at);
+  row.append(icon,copy,at);list.append(row);
+ }
 }
-
-let state = createInitialState();
-
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => [...document.querySelectorAll(selector)];
-
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
+function render(){
+ state=core.advance(state,new Date().toISOString());
+ const ratio=state.used/state.limit,percent=Math.round(ratio*100),visual=clamp(percent,0,100),s=status(ratio);
+ $('#usedValue').textContent=state.used;$('#limitValue').textContent=state.limit;
+ $('#remainingValue').textContent=Math.max(0,state.limit-state.used);
+ $('#percentValue').textContent=percent+'%';$('#ringValue').textContent=percent+'%';
+ $('#planValue').textContent=state.plan;$('#modelValue').textContent=state.model;
+ $('#resetCountdown').textContent=countdown(state.resetAt);
+ $('#resetDate').textContent=resetDate(state.resetAt);
+ $('#updatedAt').textContent=relative(state.updatedAt);
+ const fill=$('#progressFill');fill.style.width=visual+'%';fill.style.background=s.color;
+ fill.style.boxShadow='0 0 15px color-mix(in srgb, '+s.color+' 35%, transparent)';
+ const ring=$('#usageRing');ring.style.setProperty('--ring',visual*3.6+'deg');ring.style.setProperty('--ring-color',s.color);
+ ring.setAttribute('aria-label',percent+' percent of configured estimate');
+ const badge=$('#statusBadge');badge.textContent=s.label;badge.className='status-badge '+s.css;
+ $('#limitInput').value=state.limit;$('#cycleHoursInput').value=state.cycleHours;
+ $('#privacyToggle').checked=state.prefs.showPrivacy;$('#privacyCard').hidden=!state.prefs.showPrivacy;
+ const rows=core.days(state),container=$('#dailyBars');container.replaceChildren();
+ const max=Math.max(1,...rows.map(item=>item.count));
+ for(const item of rows){
+  const row=document.createElement('div');row.className='bar-row'+(item.label==='Today'?' today':'');
+  const name=document.createElement('span');name.textContent=item.label;
+  const track=document.createElement('div');track.className='day-track';
+  const bar=document.createElement('i');bar.style.width=item.count/max*100+'%';track.append(bar);
+  const value=document.createElement('strong');value.textContent=item.count;
+  row.append(name,track,value);container.append(row);
+ }
+ const past=rows.slice(0,6).reduce((sum,item)=>sum+item.count,0);
+ $('#insightText').textContent=past?'Previous 6-day average: '+(past/6).toFixed(1)+' observed prompts/day.':'Tracking begins with your first observed prompt.';
+ renderActivity();
 }
-
-async function readState() {
-  if (hasChromeStorage) {
-    const result = await chrome.storage.local.get(STORAGE_KEY);
-    return result[STORAGE_KEY] ? { ...createInitialState(), ...result[STORAGE_KEY] } : createInitialState();
+async function send(type,patch){
+ if(hasStorage){
+  const response=await chrome.runtime.sendMessage({type,patch});
+  if(!response?.ok)throw new Error(response?.error||'Storage operation failed');
+  state=core.clean(response.state);
+ }else{
+  if(type==='CHATMETER_RESET')state=core.initialState();
+  else if(type==='CHATMETER_PROMPT')state=core.count(state,new Date().toISOString());
+  else if(type==='CHATMETER_UPDATE')state=core.settings(state,patch);
+  localStorage.setItem(KEY,JSON.stringify(state));
+ }
+ render();
+}
+async function act(type,patch){try{await send(type,patch);return true;}catch(error){console.error(error);window.alert('ChatMeter could not save. Please try again.');return false;}}
+function setTab(tab){
+ const overview=tab==='overview';
+ $('#overviewPanel').classList.toggle('is-visible',overview);
+ $('#overviewPanel').setAttribute('aria-hidden',String(!overview));
+ $('#activityPanel').classList.toggle('is-visible',!overview);
+ $('#activityPanel').setAttribute('aria-hidden',String(overview));
+ $$('.segment').forEach(btn=>{const active=btn.dataset.tab===tab;btn.classList.toggle('is-active',active);btn.setAttribute('aria-selected',String(active));});
+}
+let focusBefore=null;
+function setDrawer(open){
+ if(open)focusBefore=document.activeElement;
+ const drawer=$('#settingsDrawer');drawer.classList.toggle('is-open',open);drawer.setAttribute('aria-hidden',String(!open));
+ $('#drawerScrim').hidden=!open;
+ if(open)$('#limitInput').focus();else focusBefore?.focus();
+}
+function wire(){
+ $$('.segment').forEach(btn=>btn.addEventListener('click',()=>setTab(btn.dataset.tab)));
+ $('#logUsageButton').addEventListener('click',()=>act('CHATMETER_PROMPT'));
+ $('#settingsButton').addEventListener('click',()=>setDrawer(true));
+ $('#footerSettingsButton').addEventListener('click',()=>setDrawer(true));
+ $('#closeSettingsButton').addEventListener('click',()=>setDrawer(false));
+ $('#drawerScrim').addEventListener('click',()=>setDrawer(false));
+ $('#limitInput').addEventListener('change',()=>act('CHATMETER_UPDATE',{limit:Number($('#limitInput').value)}));
+ $('#cycleHoursInput').addEventListener('change',()=>act('CHATMETER_UPDATE',{cycleHours:Number($('#cycleHoursInput').value)}));
+ $('#privacyToggle').addEventListener('change',()=>act('CHATMETER_UPDATE',{showPrivacy:$('#privacyToggle').checked}));
+ $('#resetDataButton').addEventListener('click',async()=>{if(window.confirm('Reset all locally tracked ChatMeter data?')&&await act('CHATMETER_RESET'))setDrawer(false);});
+ document.addEventListener('keydown',event=>{
+  if(event.key==='Escape')setDrawer(false);
+  if(event.key==='Tab'&&$('#settingsDrawer').classList.contains('is-open')){
+   const controls=$$('#settingsDrawer button, #settingsDrawer input').filter(el=>!el.disabled),first=controls[0],last=controls[controls.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
   }
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    return saved ? { ...createInitialState(), ...saved } : createInitialState();
-  } catch {
-    return createInitialState();
-  }
+ });
+ if(hasStorage)chrome.storage.onChanged.addListener(changes=>{if(changes[KEY]?.newValue){state=core.clean(changes[KEY].newValue);render();}});
 }
-
-async function writeState() {
-  const snapshot = clone(state);
-  if (hasChromeStorage) {
-    await chrome.storage.local.set({ [STORAGE_KEY]: snapshot });
-  } else {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-  }
+async function boot(){
+ if(hasStorage){try{const response=await chrome.runtime.sendMessage({type:'CHATMETER_GET'});if(!response?.ok)throw Error(response?.error);state=core.clean(response.state);}catch(error){console.error('ChatMeter startup failed',error);}}
+ else{try{state=core.clean(JSON.parse(localStorage.getItem(KEY)||'null'));}catch{state=core.initialState();}}
+ wire();render();setInterval(render,30000);
 }
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function formatRelative(iso) {
-  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
-function formatResetDate(iso) {
-  const date = new Date(iso);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const day = date.toDateString() === today.toDateString() ? 'Today' : date.toDateString() === tomorrow.toDateString() ? 'Tomorrow' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  return `${day}, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-}
-
-function formatCountdown(iso) {
-  const remaining = Math.max(0, new Date(iso).getTime() - Date.now());
-  const hours = Math.floor(remaining / 3600000);
-  const minutes = Math.floor((remaining % 3600000) / 60000);
-  return `${hours}h ${String(minutes).padStart(2, '0')}m`;
-}
-
-function statusFor(ratio) {
-  if (ratio >= 0.85) return { label: 'DANGER', className: 'danger', color: 'var(--red)' };
-  if (ratio >= 0.65) return { label: 'WATCH', className: 'warning', color: 'var(--orange)' };
-  return { label: 'NORMAL', className: '', color: 'var(--lime)' };
-}
-
-function renderActivity() {
-  const list = $('#activityList');
-  const events = [...(state.events || [])].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 8);
-  $('#activityCount').textContent = events.length;
-  $('#activityTotal').textContent = `${events.length} events`;
-  list.innerHTML = events.map((event) => `
-    <div class="activity-item">
-      <span class="activity-icon">↗</span>
-      <div class="activity-copy"><strong>${event.title}</strong><span>${event.detail}</span></div>
-      <span class="activity-time">${formatRelative(event.at)}</span>
-    </div>
-  `).join('');
-}
-
-function render() {
-  const ratio = clamp(Number(state.used) / Math.max(Number(state.limit), 1), 0, 1);
-  const percent = Math.round(ratio * 100);
-  const status = statusFor(ratio);
-  const remaining = Math.max(Number(state.limit) - Number(state.used), 0);
-
-  $('#usedValue').textContent = state.used;
-  $('#limitValue').textContent = state.limit;
-  $('#remainingValue').textContent = remaining;
-  $('#percentValue').textContent = `${percent}%`;
-  $('#ringValue').textContent = `${percent}%`;
-  $('#planValue').textContent = state.plan;
-  $('#modelValue').textContent = state.model;
-  $('#resetCountdown').textContent = formatCountdown(state.resetAt);
-  $('#resetDate').textContent = formatResetDate(state.resetAt);
-  $('#updatedAt').textContent = formatRelative(state.updatedAt);
-  $('#todayCount').textContent = state.used;
-  $('#todayBar').style.width = `${Math.max(percent, 3)}%`;
-
-  const fill = $('#progressFill');
-  fill.style.width = `${Math.max(percent, 2)}%`;
-  fill.style.background = status.color;
-  fill.style.boxShadow = `0 0 15px color-mix(in srgb, ${status.color} 35%, transparent)`;
-  const ring = $('#usageRing');
-  ring.style.setProperty('--ring', `${Math.max(percent, 2) * 3.6}deg`);
-  ring.style.setProperty('--ring-color', status.color);
-  ring.setAttribute('aria-label', `${percent} percent of message limit used`);
-
-  const badge = $('#statusBadge');
-  badge.textContent = status.label;
-  badge.className = `status-badge ${status.className}`;
-  $('#limitInput').value = state.limit;
-  $('#privacyToggle').checked = state.prefs?.showPrivacy !== false;
-  $('#privacyCard').hidden = state.prefs?.showPrivacy === false;
-  renderActivity();
-}
-
-async function logPrompt() {
-  state.used = Math.min(Number(state.limit), Number(state.used) + 1);
-  state.updatedAt = new Date().toISOString();
-  state.events = [{ id: `e${Date.now()}`, title: 'Prompt counted', detail: `${state.model} · 1 message`, at: state.updatedAt }, ...(state.events || [])].slice(0, 30);
-  await writeState();
-  render();
-}
-
-async function resetData() {
-  state = createInitialState();
-  await writeState();
-  render();
-}
-
-function setTab(tab) {
-  const isOverview = tab === 'overview';
-  $('#overviewPanel').classList.toggle('is-visible', isOverview);
-  $('#overviewPanel').setAttribute('aria-hidden', String(!isOverview));
-  $('#activityPanel').classList.toggle('is-visible', !isOverview);
-  $('#activityPanel').setAttribute('aria-hidden', String(isOverview));
-  $$('.segment').forEach((button) => {
-    const active = button.dataset.tab === tab;
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-selected', String(active));
-  });
-}
-
-function setDrawer(open) {
-  const drawer = $('#settingsDrawer');
-  drawer.classList.toggle('is-open', open);
-  drawer.setAttribute('aria-hidden', String(!open));
-  $('#drawerScrim').hidden = !open;
-  if (open) $('#limitInput').focus();
-}
-
-async function applyLimit() {
-  const value = clamp(Number($('#limitInput').value) || 80, 1, 9999);
-  state.limit = value;
-  state.used = Math.min(state.used, value);
-  state.updatedAt = new Date().toISOString();
-  await writeState();
-  render();
-}
-
-async function applyPrivacy() {
-  state.prefs = { ...(state.prefs || {}), showPrivacy: $('#privacyToggle').checked };
-  await writeState();
-  render();
-}
-
-function wireEvents() {
-  $$('.segment').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tab)));
-  $('#logUsageButton').addEventListener('click', logPrompt);
-  $('#settingsButton').addEventListener('click', () => setDrawer(true));
-  $('#footerSettingsButton').addEventListener('click', () => setDrawer(true));
-  $('#closeSettingsButton').addEventListener('click', () => setDrawer(false));
-  $('#drawerScrim').addEventListener('click', () => setDrawer(false));
-  $('#limitInput').addEventListener('change', applyLimit);
-  $('#privacyToggle').addEventListener('change', applyPrivacy);
-  $('#resetDataButton').addEventListener('click', async () => {
-    if (window.confirm('Reset all locally stored ChatMeter data?')) {
-      await resetData();
-      setDrawer(false);
-    }
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') setDrawer(false);
-  });
-
-  if (hasChromeStorage) {
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes[STORAGE_KEY]?.newValue) {
-        state = { ...createInitialState(), ...changes[STORAGE_KEY].newValue };
-        render();
-      }
-    });
-  }
-}
-
-async function boot() {
-  state = await readState();
-  wireEvents();
-  render();
-  window.setInterval(render, 30000);
-}
-
 boot();
