@@ -43,6 +43,7 @@ function environment(initial = []) {
     enter() { callbacks.keydown({ key: 'Enter', isTrusted: true, target: new Element(), shiftKey: false, ctrlKey: false, metaKey: false, altKey: false }); },
     click() { callbacks.click({ isTrusted: true, target: new Element('button') }); },
     shiftEnter() { callbacks.keydown({ key: 'Enter', isTrusted: true, shiftKey: true, target: new Element() }); },
+    unrelatedEnter() { callbacks.keydown({ key: 'Enter', isTrusted: true, target: new Element('other') }); },
     mutate() { observer(); },
     add(text, id) { const n = node(text, id); messages.push(n); observer(); return n; }
   };
@@ -91,4 +92,21 @@ test('Enter and click within 120 ms do not double arm same send',()=>{
 });
 test('button clicks can count send after visible user message appears',()=>{
   const e=environment();e.click();e.add('clicked send','a');assert.equal(e.recorded.length,1);
+});
+
+test('first send from new-chat page survives transition to conversation URL',()=>{
+  const e=environment();e.location.href='https://chatgpt.com/';
+  e.mutate();e.enter();e.location.href='https://chatgpt.com/c/new-thread';
+  e.add('first message','first');assert.equal(e.recorded.length,1);
+});
+test('two pending sends confirmed by one DOM update both count',()=>{
+  const e=environment();e.enter();e.advance(220);e.enter();
+  e.messages.push(e.node('first','one'),e.node('second','two'));
+  e.mutate();assert.equal(e.recorded.length,2);
+});
+test('unrelated contenteditable editor does not arm a prompt',()=>{
+  const e=environment();e.composer.value='prepared message';
+  // An unrelated contenteditable does not represent ChatGPT's prompt composer.
+  e.unrelatedEnter();e.add('unrelated new user node','unrelated');
+  assert.equal(e.recorded.length,0);
 });
