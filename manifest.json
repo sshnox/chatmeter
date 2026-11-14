@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "ChatMeter — ChatGPT usage tracker",
-  "version": "0.1.0",
-  "description": "A local-first usage dashboard for ChatGPT messages, limits, reset timing, and activity.",
+  "version": "0.2.0",
+  "description": "Local estimate of observed ChatGPT prompts, not official quota tracking.",
   "action": {
     "default_title": "Open ChatMeter",
     "default_popup": "index.html"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*"
@@ -21,7 +23,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ]
