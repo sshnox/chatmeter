@@ -8,6 +8,19 @@ ChatMeter is a small Chrome/Edge extension I built to keep ChatGPT usage visible
 
 Maintained by [sshnox](https://github.com/sshnox).
 
+## v0.2 accuracy notes
+
+ChatMeter observes newly rendered ChatGPT user messages following a send action. The heuristic may miss or miscount prompts if ChatGPT changes its DOM, when a send is edited, or when usage occurs on another device. No official usage or account quota API is used.
+
+- Clean initial state: no simulated messages, model, plan, reset timer, or graph history
+- Local cycle duration is configurable (default 3 hours) and begins after the first observed prompt
+- Message limits are manually configured estimates, not official ChatGPT limits
+- Observed prompt counts are not capped at the estimate
+- Serial background storage writes reduce lost counts from simultaneous tabs
+- Seven-day charts derive from locally observed events; recent activity retains up to 200 records
+- v0.1 data is not migrated because it contained indistinguishable demo records
+- Reset clears locally stored v0.2 history and sets the counter back to zero
+
 ## What it does
 
 - Shows messages used, messages remaining, and percentage used
@@ -25,7 +38,7 @@ Maintained by [sshnox](https://github.com/sshnox).
 ChatMeter is currently distributed as an unpacked developer build.
 
 1. Clone this repository.
-2. Run `npm run build`.
+2. Run `npm test && npm run build`.
 3. Open `chrome://extensions` in Chrome, Edge, Brave, Arc, or another Chromium browser.
 4. Turn on **Developer mode**.
 5. Choose **Load unpacked** and select the `dist/` directory.
@@ -48,6 +61,7 @@ Open `http://localhost:3000`. The preview uses `localStorage` because `chrome.st
 ```bash
 npm run start   # Run the preview on port 3000
 npm run check   # Check JavaScript syntax
+npm test        # Run local state regressions
 npm run build   # Build the unpacked extension into dist/
 ```
 
@@ -55,7 +69,7 @@ There are no runtime dependencies. The popup uses plain HTML, CSS, and browser J
 
 ## How it works
 
-The popup and background service worker share one `chatmeter_state_v1` record in `chrome.storage.local`. The content script watches the ChatGPT composer for a submission and sends a small event message to the service worker. The event contains a timestamp and a count, not the text of the prompt.
+The popup and background service worker share one `chatmeter_state_v2` record in `chrome.storage.local`. The content script watches the ChatGPT composer for a send attempt and then checks for a newly rendered user message before sending a small event signal to the service worker. The event contains a timestamp and a count, not the text of the prompt.
 
 When the extension is not installed, the preview uses the same state shape in `localStorage`. The popup listens for storage changes so it can update when a prompt is recorded in another tab.
 
@@ -69,7 +83,7 @@ ChatMeter stores usage data in the browser and does not have a backend, login, a
 - **No network service:** usage data is not sent anywhere.
 - **Clear anytime:** use **Reset local data** in settings to remove the local history.
 
-The limit and reset values are configurable estimates. They are not an official OpenAI quota API or a billing meter.
+The limit and local time-window values are configurable estimates. They are not an official OpenAI quota API or billing meter.
 
 ## Project layout
 
@@ -79,6 +93,8 @@ The limit and reset values are configurable estimates. They are not an official 
 ├── styles.css          # Popup styles
 ├── app.js              # Popup state and interactions
 ├── background.js       # MV3 service worker
+├── state.js            # Shared tracking and cycle rules
+├── tests/              # State regression tests
 ├── content.js          # ChatGPT composer event detection
 ├── manifest.json       # Extension metadata and permissions
 ├── build.mjs           # Builds the dist/ folder
