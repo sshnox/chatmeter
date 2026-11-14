@@ -167,3 +167,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--lime); outl
   .context-value { font-size: 10px; }
   .context-label { font-size: 7px; }
 }
+
+/* v0.3 snapshot entry: accommodate named usage pools and dates inside the original drawer. */
+.settings-drawer { overflow-y: auto; }
+.setting-field { gap: 12px; min-height: 60px; }
+.setting-field > span:first-child { flex: 1; line-height: 1.4; }
+.setting-field .input-wrap { flex: 0 0 auto; max-width: 60%; }
+#categoryInput { width: 125px; text-align: left; }
+#remainingInput { width: 52px; }
+#officialResetInput { width: 153px; text-align: left; font-size: 10px; }
+#openUsageButton, #saveSnapshotButton, #clearSnapshotButton { margin-top: 13px; text-align: left; white-space: normal; }
+#saveSnapshotButton { color: var(--lime); }
+#clearSnapshotButton { color: var(--muted); }
